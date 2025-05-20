@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Load your required CSS (Bulma, etc.) -->
+  <link rel="stylesheet" href="static/css/bulma.min.css">
+  <link rel="stylesheet" href="static/css/index.css">
+  
+  <!-- (Optional) Additional fonts, icons, or styles if needed -->
+  <style>
+    .makeanaglyph {
+      width: 300px;
+      overflow: hidden;
+    }
+    .makeanaglyph video {
+      width: 200%;
+      max-width: 200%;
+      filter: url(#anaglyphfilter);
+    }
+    .toggleButton {
+      display: inline-block;
+      font-size: 14px;
+      padding: 6px 12px;
+      margin: 6px;
+      background-color: #f4f4f4;
+      color: #333;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    .toggleButton:hover {
+      background-color: #e0e0e0;
+      color: #000;
+    }
+    .sbs {
+      width: 300px;
+      height: 300px;
+    }
+    .unit {
+      margin-bottom: 20px;
+    }
+    .row {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- Anaglyph filter definition -->
+<div>
+  <svg id="svgleft" xmlns="http://www.w3.org/2000/svg" height="0">
+    <defs>
+      <filter id="anaglyphfilter" x="0" y="0" width="100%" height="100%">
+        <feColorMatrix in="SourceGraphic" type="matrix"
+          values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0 1" result="left" />
+        <feColorMatrix in="SourceGraphic" type="matrix"
+          values="0 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0 1" />
+        <feOffset dx="-300" dy="0" result="right" />
+        <feBlend in="left" in2="right" mode="screen" />
+      </filter>
+    </defs>
+  </svg>
+</div>
+
+
+<!-- Comparison Section -->
+<!-- <section class="section hero is-light">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Comparison to the Warp & Inpaint baseline</h2>
+      <p class="has-text-justified" style="margin-bottom: 2rem;">
+        We compare our method against the common "Warp and Inpaint" approach, which uses monocular depth estimation to warp the right eye video into the left eye, and an inpainting model to fill in the missing content.<br>
+        Such approach fails in videos where specular reflections or transperent objects are present, as it is often impossible to charecterize each pixel with a single depth value. <br>
+        In such cases, the incorrect depth estimation leads to incorrect 3D effect and distortions in the output frames. <br>
+        Our method directly produces the RGB stereo views, without the need to first estimate a depth map. Thus, it can levarge the generative model's prior on object materials and optics, and handle such challenging videos. <br>
+        To go back to the main page press <a href="index.html"><strong><u></u></strong></a>. 
+        </p>
+      
+      <div class="row">
+      
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_reflection_of_a_woman_on_a_building's_glass_window_with_a_car_parked_nearby/ours.mp4" type="video/mp4">
+            </video>
+            <p>Ours</p>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_reflection_of_a_woman_on_a_building's_glass_window_with_a_car_parked_nearby/warp_inpaint.mp4" type="video/mp4">
+            </video>
+            <p>Warp & Inpaint</p>
+          </div>
+        </div>
+    </div>
+    <p>Note the 3D effect of the reflection of the woman's face; in our output it appears near, while it has no 3D in the Warp & Inpaint method, since the depth estimation doesn't account for the reflection.</p>
+    <hr>
+
+    <div class="row">
+      <div class="unit">
+        <button class="toggleButton">Click to view SBS</button>
+        <div class="makeanaglyph videoContainer">
+          
+          <video poster="" autoplay muted loop height="100%">
+            <source src="static/stereo-videos/a_person_looking_out_the_window_at_a_forest,_reflected_on_the_glass/ours.mp4" type="video/mp4">
+          </video>
+          <p>Ours</p>
+        </div>
+      </div>
+      <div class="unit">
+        <button class="toggleButton">Click to view SBS</button>
+        <div class="makeanaglyph videoContainer">
+          <video poster="" autoplay muted loop height="100%">
+            <source src="static/stereo-videos/a_person_looking_out_the_window_at_a_forest,_reflected_on_the_glass/warp_inpaint.mp4" type="video/mp4">
+          </video>
+          <p>Warp & Inpaint</p>
+        </div>
+      </div>
+  </div>
+  <p>Note the depth of the reflection: it should appear near, as in our result. The warp & inpaint baseline fails to create a 3D effect of this reflection. </p>
+  <hr>
+
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_woman_wearing_a_red_beanie_looking_out_through_a_round_window/ours.mp4" type="video/mp4">
+            </video>
+            <p>Ours</p>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_woman_wearing_a_red_beanie_looking_out_through_a_round_window/warp_inpaint.mp4" type="video/mp4">
+            </video>
+            <p>Warp & Inpaint</p>
+          </div>
+        </div>
+    </div>
+    <p>Note the depth difference between the far away content reflected on the window, and the woman's face: In the warp & inpaint baseline, they both have the same depth. In our results, the woman's face is indeed closer than the reflected content. </p>
+    <hr>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_shiny,_reflective_floor_in_a_dining_area_with_a_cat_and_furniture/ours.mp4" type="video/mp4">
+            </video>
+            <p>Ours</p>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_shiny,_reflective_floor_in_a_dining_area_with_a_cat_and_furniture/warp_inpaint.mp4" type="video/mp4">
+            </video>
+            <p>Warp & Inpaint</p>
+          </div>
+        </div>
+    </div>
+    <p>Note the chair reflected on the floor. In our result it has a more reslitic depth, while in the warp & inpaint baseline it seems more "flat".</p>
+    <hr>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/a_woman_sitting_in_front_of_a_glass_window,_a_cityscape_outside_2/ours.mp4" type="video/mp4">
+            </video>
+            <p>Ours</p>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/a_woman_sitting_in_front_of_a_glass_window,_a_cityscape_outside_2/warp_inpaint.mp4" type="video/mp4">
+            </video>
+            <p>Warp & Inpaint</p>
+          </div>
+        </div>
+    </div>
+    <p>Note the 3D effect of the woman's reflection: in our result it appears near, while in the warp & inpaint result, it is as far as the building behind.</p>
+    <hr>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_reflective_moment_as_a_woman_sits_by_the_window,_listening_to_music_while_gazing_at_the_cityscape_at_dusk/ours.mp4" type="video/mp4">
+            </video>
+            <p>Ours</p>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_reflective_moment_as_a_woman_sits_by_the_window,_listening_to_music_while_gazing_at_the_cityscape_at_dusk/warp_inpaint.mp4" type="video/mp4">
+            </video>
+            <p>Warp & Inpaint</p>
+          </div>
+        </div>
+    </div>
+    <p>Note the building behind reflection on the window: in the warp & inpaint result, the building is as near as the reflection; in our result the reflection is infront of it.</p>
+    <hr>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/Panoramic_cityscape_at_dusk,_showing_urban_buildings_and_lights/ours.mp4" type="video/mp4">
+            </video>
+            <p>Ours</p>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/Panoramic_cityscape_at_dusk,_showing_urban_buildings_and_lights/warp_inpaint.mp4" type="video/mp4">
+            </video>
+            <p>Warp & Inpaint</p>
+          </div>
+        </div>
+    </div>
+    <p>Note the reflection of the near-by wall: in our result it appears near indeed, while in the warp & inpaint baseline, it appears flatter, especially in the top of the video, where the reflection is on the sky.</p>
+    <hr>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_small_playful_dog_interacting_with_a_ball_on_a_polished_floor.,_cute/ours.mp4" type="video/mp4">
+            </video>
+            <p>Ours</p>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_small_playful_dog_interacting_with_a_ball_on_a_polished_floor.,_cute/warp_inpaint.mp4" type="video/mp4">
+            </video>
+            <p>Warp & Inpaint</p>
+          </div>
+        </div>
+    </div>
+    <p>Note the reflection of the dog on the floor: In our result it appears more realistic, while in the warp & inpaint result it appears flat.</p>
+    <hr>
+    <div class="row">
+      <div class="unit">
+        <button class="toggleButton">Click to view SBS</button>
+        <div class="makeanaglyph videoContainer">
+          <video poster="" autoplay muted loop height="100%">
+            <source src="static/stereo-videos/A_smiling_woman_stands_behind_a_window,_reflecting_the_outdoors/ours.mp4" type="video/mp4">
+            </video>
+            <p>Ours</p>
+          </div>
+      </div>
+      <div class="unit">
+        <button class="toggleButton">Click to view SBS</button>
+        <div class="makeanaglyph videoContainer">
+          <video poster="" autoplay muted loop height="100%">
+            <source src="static/stereo-videos/A_smiling_woman_stands_behind_a_window,_reflecting_the_outdoors/warp_inpaint.mp4" type="video/mp4">
+            </video>
+            <p>Warp & Inpaint</p>
+          </div>
+      </div>
+  </div>
+  <p>Note that the distant reflection on the window in the warp and inpaint output appears close, while it should appear far, as in our result.</p>
+  <div class="row">
+    <div class="unit">
+      <button class="toggleButton">Click to view SBS</button>
+      <div class="makeanaglyph videoContainer">
+        <video poster="" autoplay muted loop height="100%">
+          <source src="static/stereo-videos/A_couple_walks_their_dogs_through_a_rainy_urban_park/ours.mp4" type="video/mp4">
+        </video>
+        <p>Ours</p>
+      </div>
+    </div>
+    <div class="unit">
+      <button class="toggleButton">Click to view SBS</button>
+      <div class="makeanaglyph videoContainer">
+        <video poster="" autoplay muted loop height="100%">
+          <source src="static/stereo-videos/A_couple_walks_their_dogs_through_a_rainy_urban_park/warp_inpaint.mp4" type="video/mp4">
+        </video>
+        <p>Warp & Inpaint</p>
+      </div>
+    </div>
+</div>
+<p>Note the buildings behind the umbrella; in the warp and inpaint baseline, they appear to be as near as the umberlla, while in our result they are correctly distant.</p>
+<hr>
+  <div class="row">
+      <div class="unit">
+        <button class="toggleButton">Click to view SBS</button>
+        <div class="makeanaglyph videoContainer">
+          <video poster="" autoplay muted loop height="100%">
+            <source src="static/stereo-videos/A_man_sips_coffee_while_gazing_through_a_reflective_window/ours.mp4" type="video/mp4">
+            </video>
+            <p>Ours</p>
+          </div>
+      </div>
+      <div class="unit">
+        <button class="toggleButton">Click to view SBS</button>
+        <div class="makeanaglyph videoContainer">
+          <video poster="" autoplay muted loop height="100%">
+            <source src="static/stereo-videos/A_man_sips_coffee_while_gazing_through_a_reflective_window/warp_inpaint.mp4" type="video/mp4">
+            </video>
+            <p>Warp & Inpaint</p>
+          </div>
+      </div>
+  </div>
+  <p>Note the reflection on the mug; in the warp and inpaint output it is as near as the mug, while in our output it is correctly distant.</p>
+  <hr>
+  <div class="row">
+      <div class="unit">
+        <button class="toggleButton">Click to view SBS</button>
+        <div class="makeanaglyph videoContainer">
+          <video poster="" autoplay muted loop height="100%">
+            <source src="static/stereo-videos/A_minimalist_dining_area_with_modern_furniture_and_decor/ours.mp4" type="video/mp4">
+            </video>
+            <p>Ours</p>
+          </div>
+      </div>
+      <div class="unit">
+        <button class="toggleButton">Click to view SBS</button>
+        <div class="makeanaglyph videoContainer">
+          <video poster="" autoplay muted loop height="100%">
+            <source src="static/stereo-videos/A_minimalist_dining_area_with_modern_furniture_and_decor/warp_inpaint.mp4" type="video/mp4">
+            </video>
+            <p>Warp & Inpaint</p>
+          </div>
+      </div>
+  </div>
+  <p>Note the distorted reflection of the bottle on the table in the warp and inpaint example. Our result correctly handles the reflection.</p>
+  <hr>
+  <div class="row">
+    <div class="unit">
+      <button class="toggleButton">Click to view SBS</button>
+      <div class="makeanaglyph videoContainer">
+        <video poster="" autoplay muted loop height="100%">
+          <source src="static/stereo-videos/A_young_girl_with_a_stuffed_toy_gazes_out_of_a_train_window/ours.mp4" type="video/mp4">
+          </video>
+          <p>Ours</p>
+        </div>
+    </div>
+    <div class="unit">
+      <button class="toggleButton">Click to view SBS</button>
+      <div class="makeanaglyph videoContainer">
+        <video poster="" autoplay muted loop height="100%">
+          <source src="static/stereo-videos/A_young_girl_with_a_stuffed_toy_gazes_out_of_a_train_window/warp_inpaint.mp4" type="video/mp4">
+          </video>
+          <p>Warp & Inpaint</p>
+        </div>
+    </div>
+    
+</div>
+<p>Note that the reflection of the girl on the window appears flat in the warp and inpaint output, while in ours it appears as near as the girl. </p>
+<hr>
+<div class="row">
+  <div class="unit">
+    <button class="toggleButton">Click to view SBS</button>
+    <div class="makeanaglyph videoContainer">
+      <video poster="" autoplay muted loop height="100%">
+        <source src="static/stereo-videos/A_glass_door_with_a_sign_reading_'Closed'_in_Hebrew,_showing_reflections_of_the_street/ours.mp4" type="video/mp4">
+      </video>
+    </div>
+  </div>
+  <div class="unit">
+    <button class="toggleButton">Click to view SBS</button>
+    <div class="makeanaglyph videoContainer">
+      <video poster="" autoplay muted loop height="100%">
+        <source src="static/stereo-videos/A_glass_door_with_a_sign_reading_'Closed'_in_Hebrew,_showing_reflections_of_the_street/warp_inpaint.mp4" type="video/mp4">
+      </video>
+    </div>
+  </div>
+</div>
+<p>Note the content reflecting on the glass, on top of the manniquin. It appears in front of the manniquin in the warp and inpaint result, while in ours it's correctly further away. </p> 
+
+</section> -->
+
+<!-- Comparison Section -->
+<section class="section hero is-light">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Comparison to baselines</h2>
+    <p class="subtitle has-text-centered">
+      Click on the buttons to toggle between anaglyph and side-by-side (SBS) views.  <br>
+      For more videos and comparisons, please refer to the <a href="user-study-data-compare/index.html">results page</a>.
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_reflection_of_a_woman_on_a_building's_glass_window_with_a_car_parked_nearby/ours.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_reflection_of_a_woman_on_a_building's_glass_window_with_a_car_parked_nearby/warp_inpaint.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereocrafter_public/A_reflection_of_a_woman_on_a_building's_glass_window_with_a_car_parked_nearby/splatting_output_inpainting_results_sbs.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+    </div>
+    <p>Note the 3D effect of the reflection of the woman's face; in our output it appears near, while it has no 3D in the Warp & Inpaint method, since the depth estimation doesn't account for the reflection.</p>
+    <hr>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/a_person_looking_out_the_window_at_a_forest,_reflected_on_the_glass/ours.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/a_person_looking_out_the_window_at_a_forest,_reflected_on_the_glass/warp_inpaint.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereocrafter_public/a_person_looking_out_the_window_at_a_forest,_reflected_on_the_glass/splatting_output_inpainting_results_sbs.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+    </div>
+    <p>Note the depth of the reflection: it should appear near, as in our result. The warp & inpaint baseline fails to create a 3D effect of this reflection.</p>
+    <hr>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_woman_wearing_a_red_beanie_looking_out_through_a_round_window/ours.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_woman_wearing_a_red_beanie_looking_out_through_a_round_window/warp_inpaint.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereocrafter_public/A_woman_wearing_a_red_beanie_looking_out_through_a_round_window/splatting_output_inpainting_results_sbs.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+    </div>
+    <p>Note the depth difference between the far away content reflected on the window, and the woman's face: In the warp & inpaint baseline, they both have the same depth. In our results, the woman's face is indeed closer than the reflected content.</p>
+    <hr>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_shiny,_reflective_floor_in_a_dining_area_with_a_cat_and_furniture/ours.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_shiny,_reflective_floor_in_a_dining_area_with_a_cat_and_furniture/warp_inpaint.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereocrafter_public/A_shiny,_reflective_floor_in_a_dining_area_with_a_cat_and_furniture/splatting_output_inpainting_results_sbs.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+    </div>
+    <p>Note the chair reflected on the floor. In our result it has a more reslitic depth, while in the warp & inpaint baseline it seems more "flat".</p>
+    <hr>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/a_woman_sitting_in_front_of_a_glass_window,_a_cityscape_outside_2/ours.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/a_woman_sitting_in_front_of_a_glass_window,_a_cityscape_outside_2/warp_inpaint.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereocrafter_public/a_woman_sitting_in_front_of_a_glass_window,_a_cityscape_outside_2/splatting_output_inpainting_results_sbs.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+    </div>
+    <p>Note the 3D effect of the woman's reflection: in our result it appears near, while in the warp & inpaint result, it is as far as the building behind.</p>
+    <hr>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_reflective_moment_as_a_woman_sits_by_the_window,_listening_to_music_while_gazing_at_the_cityscape_at_dusk/ours.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_reflective_moment_as_a_woman_sits_by_the_window,_listening_to_music_while_gazing_at_the_cityscape_at_dusk/warp_inpaint.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereocrafter_public/A_reflective_moment_as_a_woman_sits_by_the_window,_listening_to_music_while_gazing_at_the_cityscape_at_dusk/splatting_output_inpainting_results_sbs.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+    </div>
+    <p>Note the building behind reflection on the window: in the warp & inpaint result, the building is as near as the reflection; in our result the reflection is infront of it.</p>
+    <hr>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/Panoramic_cityscape_at_dusk,_showing_urban_buildings_and_lights/ours.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/Panoramic_cityscape_at_dusk,_showing_urban_buildings_and_lights/warp_inpaint.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereocrafter_public/Panoramic_cityscape_at_dusk,_showing_urban_buildings_and_lights/splatting_output_inpainting_results_sbs.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+    </div>
+    <p>Note the reflection of the near-by wall: in our result it appears near indeed, while in the warp & inpaint baseline, it appears flatter, especially in the top of the video, where the reflection is on the sky.</p>
+    <hr>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_small_playful_dog_interacting_with_a_ball_on_a_polished_floor.,_cute/ours.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_small_playful_dog_interacting_with_a_ball_on_a_polished_floor.,_cute/warp_inpaint.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereocrafter_public/A_small_playful_dog_interacting_with_a_ball_on_a_polished_floor.,_cute/splatting_output_inpainting_results_sbs.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+    </div>
+    <p>Note the reflection of the dog on the floor: In our result it appears more realistic, while in the warp & inpaint result it appears flat.</p>
+    <hr>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_smiling_woman_stands_behind_a_window,_reflecting_the_outdoors/ours.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_smiling_woman_stands_behind_a_window,_reflecting_the_outdoors/warp_inpaint.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereocrafter_public/A_smiling_woman_stands_behind_a_window,_reflecting_the_outdoors/splatting_output_inpainting_results_sbs.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+    </div>
+    <p>Note that the distant reflection on the window in the warp and inpaint output appears close, while it should appear far, as in our result.</p>
+    <hr>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_couple_walks_their_dogs_through_a_rainy_urban_park/ours.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_couple_walks_their_dogs_through_a_rainy_urban_park/warp_inpaint.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereocrafter_public/A_couple_walks_their_dogs_through_a_rainy_urban_park/splatting_output_inpainting_results_sbs.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+    </div>
+    <p>Note the buildings behind the umbrella; in the warp and inpaint baseline, they appear to be as near as the umberlla, while in our result they are correctly distant.</p>
+    <hr>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_man_sips_coffee_while_gazing_through_a_reflective_window/ours.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_man_sips_coffee_while_gazing_through_a_reflective_window/warp_inpaint.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereocrafter_public/A_man_sips_coffee_while_gazing_through_a_reflective_window/splatting_output_inpainting_results_sbs.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+    </div>
+    <p>Note the reflection on the mug; in the warp and inpaint output it is as near as the mug, while in our output it is correctly distant.</p>
+    <hr>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_minimalist_dining_area_with_modern_furniture_and_decor/ours.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_minimalist_dining_area_with_modern_furniture_and_decor/warp_inpaint.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereocrafter_public/A_minimalist_dining_area_with_modern_furniture_and_decor/splatting_output_inpainting_results_sbs.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+    </div>
+    <p>Note the distorted reflection of the bottle on the table in the warp and inpaint example. Our result correctly handles the reflection.</p>
+    <hr>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_young_girl_with_a_stuffed_toy_gazes_out_of_a_train_window/ours.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_young_girl_with_a_stuffed_toy_gazes_out_of_a_train_window/warp_inpaint.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereocrafter_public/A_young_girl_with_a_stuffed_toy_gazes_out_of_a_train_window/splatting_output_inpainting_results_sbs.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+    </div>
+    <p>Note that the reflection of the girl on the window appears flat in the warp and inpaint output, while in ours it appears as near as the girl.</p>
+    <hr>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_glass_door_with_a_sign_reading_'Closed'_in_Hebrew,_showing_reflections_of_the_street/ours.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_glass_door_with_a_sign_reading_'Closed'_in_Hebrew,_showing_reflections_of_the_street/warp_inpaint.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereocrafter_public/A_glass_door_with_a_sign_reading_'Closed'_in_Hebrew,_showing_reflections_of_the_street/splatting_output_inpainting_results_sbs.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+    </div>
+    <p>Note the content reflecting on the glass, on top of the manniquin. It appears in front of the manniquin in the warp and inpaint result, while in ours it's correctly further away.</p>
+    <hr>
+  </div>
+</section>
+
+
+<!-- Toggle script: same one used in your main HTML -->
+<script>
+  document.addEventListener('click', (event) => {
+    if (event.target.classList.contains('toggleButton')) {
+      const unit = event.target.closest('.unit');
+      const videoContainer = unit.querySelector('.videoContainer');
+
+      // Toggle .makeanaglyph / .sbs
+      if (videoContainer.classList.contains('makeanaglyph')) {
+        videoContainer.classList.remove('makeanaglyph');
+        videoContainer.classList.add('sbs');
+      } else {
+        videoContainer.classList.remove('sbs');
+        videoContainer.classList.add('makeanaglyph');
+      }
+
+      // Toggle button text
+      if (event.target.textContent === 'Click to view Anaglyph') {
+        event.target.textContent = 'Click to view SBS';
+      } else {
+        event.target.textContent = 'Click to view Anaglyph';
+      }
+    }
+  });
+</script>
+
+
+</body>
+</html>

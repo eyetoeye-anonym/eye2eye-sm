@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Anaglyph Video Viewer</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .makeanaglyph {
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    .makeanaglyph video {
+      width: 200%;
+      max-width: 200%;
+      /* height: 100%; */
+      filter: url(#anaglyphfilter);
+    }
+
+    /* Style for direct anaglyph video (no filter) */
+    .directanaglyph {
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+    }
+
+    .directanaglyph video {
+      width: 100%;
+      max-width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <!-- Anaglyph filter definition -->
+  <svg id="svgleft" xmlns="http://www.w3.org/2000/svg" height="0">
+    <defs>
+      <filter id="anaglyphfilter" x="0" y="0" width="100%" height="100%">
+        <feColorMatrix in="SourceGraphic" type="matrix"
+                       values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0 1" 
+                       result="left" />
+        <feColorMatrix in="SourceGraphic" type="matrix"
+                       values="0 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0 1"/>
+        <feOffset id="rightshift" dx="-512" dy="0" result="right" />
+        <feBlend in="left" in2="right" mode="screen" />
+      </filter>
+    </defs>
+  </svg>
+
+  <div id="videoContainer" class="makeanaglyph">
+    <video id="video" autoplay muted loop>
+      <source src="" type="video/mp4">
+    </video>
+  </div>
+
+  <script>
+    // Browser detection for iOS and Safari
+    function isIOSorSafari() {
+      const ua = navigator.userAgent;
+      const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+      return isIOS || isSafari;
+    }
+
+    // Function to get anaglyph video source based on original source
+    function getAnaglyphSrc(originalSrc) {
+      // Remove .mp4 extension and add _anaglyph.mp4
+      return originalSrc.replace('.mp4', '_anaglyph.mp4');
+    }
+
+    // Get the video source from the URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const videoSrc = urlParams.get('video');
+    
+    if (videoSrc) {
+      const decodedVideoSrc = decodeURIComponent(videoSrc);
+      const videoElement = document.querySelector('#video');
+      const sourceElement = document.querySelector('#video source');
+      const videoContainer = document.querySelector('#videoContainer');
+      
+      if (isIOSorSafari()) {
+        // For iOS/Safari, use pre-rendered anaglyph video and remove filter
+        sourceElement.src = getAnaglyphSrc(decodedVideoSrc);
+        videoElement.style.filter = 'none';
+        videoElement.style.width = '100%';
+        videoElement.style.maxWidth = '100%';
+        videoContainer.classList.remove('makeanaglyph');
+        videoContainer.classList.add('directanaglyph');
+      } else {
+        // For other browsers, use the SVG filter-based approach
+        sourceElement.src = decodedVideoSrc;
+      }
+      
+      videoElement.load();
+    }
+  </script>
+</body>
+</html> 

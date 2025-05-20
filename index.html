@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Meta tags for social media banners, these should be filled in appropriately -->
+  <meta name="description" content="Eye2Eye">
+  <meta property="og:title" content="Eye2Eye"/>
+  <meta property="og:description" content="Eye2Eye"/>
+  <meta property="og:url" content="https://video-eye2eye.github.io"/>
+  <!-- Path to banner image, should be in the path listed below. Optimal dimensions are 1200x630 -->
+  <meta property="og:image" content="static/image/anaglyph_icon.png" />
+  <meta property="og:image:width" content="1200"/>
+  <meta property="og:image:height" content="630"/>
+
+  <meta name="twitter:title" content="Eye2Eye">
+  <meta name="twitter:description" content="Eye2Eye">
+  <!-- Path to banner image, should be in the path listed below. Optimal dimensions are 1200x600 -->
+  <meta name="twitter:image" content="static/image/anaglyph_icon.png" />
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- Keywords for your paper to be indexed by-->
+  <meta name="keywords" content="KEYWORDS SHOULD BE PLACED HERE">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Eye2Eye</title>
+  <link rel="icon" type="image/x-icon" href="static/images/anaglyph_icon.png">
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="static/css/bulma.min.css">
+  <link rel="stylesheet" href="static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="static/css/index.css">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://documentcloud.adobe.com/view-sdk/main.js"></script>
+  <script defer src="static/js/fontawesome.all.min.js"></script>
+  <script src="static/js/bulma-carousel.min.js"></script>
+  <script src="static/js/bulma-slider.min.js"></script>
+  <script src="static/js/index.js"></script>
+
+  <!-- Optional: styles from the snippet -->
+  <style>
+    /* Original .makeanaglyph from the main page */
+    .makeanaglyph {
+      width: 300px;
+      overflow: hidden;
+    }
+    .makeanaglyph video {
+      width: 200%;
+      max-width: 200%;
+      filter: url(#anaglyphfilter);
+    }
+
+    /* Snippet's toggling classes */
+    .toggleButton {
+      display: inline-block;
+      font-size: 14px;
+      padding: 6px 12px;
+      margin: 6px;
+      background-color: #f4f4f4;
+      color: #333;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    .toggleButton:hover {
+      background-color: #e0e0e0;
+      color: #000;
+    }
+    .toggleButton:focus {
+      outline: none;
+      box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+    }
+
+    /* The SBS view */
+    .sbs {
+      width: 600px;
+      height: 300px;  
+    }
+
+    /* Container for each video/card */
+    .unit {
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    /* Video link styles */
+    .video-link {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .video-link:hover {
+      opacity: 0.9;
+    }
+
+    /* A row that holds videos */
+    .row {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 0 auto;
+      max-width: 1200px;
+    }
+
+    /* Video container styles */
+    .videoContainer {
+      margin: 0 auto;
+    }
+
+    /* Caption styling */
+    .caption {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+  </style>
+  <script>
+    // Browser detection for iOS and Safari
+    function isIOSorSafari() {
+      const ua = navigator.userAgent;
+      const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+      return isIOS || isSafari;
+    }
+
+    // Function to handle video click based on current mode
+    function handleVideoClick(event, videoSrc) {
+      const unit = event.currentTarget.closest('.unit');
+      const videoContainer = unit.querySelector('.videoContainer');
+      
+      // If in anaglyph mode, open anaglyph viewer
+      if (videoContainer.classList.contains('makeanaglyph')) {
+        window.open('anaglyph_viewer.html?video=' + encodeURIComponent(videoSrc), '_blank');
+      } else {
+        // If in SBS mode, open video directly
+        window.open(videoSrc, '_blank');
+      }
+      event.preventDefault();
+    }
+
+    // Function to get anaglyph video source based on original source
+    function getAnaglyphSrc(originalSrc) {
+      // Remove .mp4 extension and add _anaglyph.mp4
+      return originalSrc.replace('.mp4', '_anaglyph.mp4');
+    }
+
+    // Initialize videos when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      if (isIOSorSafari()) {
+        // For iOS/Safari: replace CSS filter-based anaglyph with pre-rendered anaglyph videos
+        document.querySelectorAll('.makeanaglyph video').forEach(function(video) {
+          const source = video.querySelector('source');
+          if (source) {
+            // Store the original source for toggling
+            source.dataset.originalSrc = source.src;
+            // Set the anaglyph version
+            source.src = getAnaglyphSrc(source.src);
+            // Remove the filter that would be applied
+            video.style.filter = 'none';
+            video.style.width = '100%';
+            video.style.maxWidth = '100%';
+            // Reload the video with new source
+            video.load();
+          }
+        });
+      }
+    });
+  </script>
+</head>
+
+<body>
+  <!-- The main page's anaglyph filter definition -->
+  <div>
+    <svg id="svgleft" xmlns="http://www.w3.org/2000/svg" height="0">
+      <defs>
+        <filter id="anaglyphfilter" x="0" y="0" width="100%" height="100%">
+          <!-- Adjust dx if you want a stronger separation, e.g. dx="-300" -->
+          <feColorMatrix in="SourceGraphic" type="matrix"
+                         values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0 1" 
+                         result="left" />
+          <feColorMatrix in="SourceGraphic" type="matrix"
+                         values="0 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0 1"/>
+          <feOffset id="rightshift" dx="-300" dy="0" result="right" />
+          <feBlend in="left" in2="right" mode="screen" />
+        </filter>
+      </defs>
+    </svg>
+  </div>
+
+  <!-- Hero Section (Title, etc.) -->
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">Eye2Eye: A simple approach for monocular-to-stereo video synthesis</h1>
+            <h2 class="subtitle is-4 publication-subtitle">Supplementary Material</a></h2>
+            <div class="is-size-5 publication-authors">
+              <!-- Paper authors -->
+              <span class="author-block">
+                <p>Anonymous submission</p>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Teaser video-->
+  <section class="hero teaser">
+    <div class="container is-max-desktop">
+      <div class="hero-body">
+        <video poster="" id="tree" autoplay controls muted loop height="100%">
+          <source src="static/videos/Demo.mp4">
+        </video>
+        <h2 class="subtitle has-text-centered">
+          Our model takes a real-world monocular video as an input right-eye view and
+          produces a left-eye video, enabling stereoscopic viewing using 3D glasses or a VR headset. <br>
+          Our pipeline <strong>does not include explicit depth estimation and warping</strong>, and thus can plausibly handle <br>
+          videos with <strong>specular and semi transparent objects</strong>, like the wine glass or the snow flakes.
+        </h2>
+      </div>
+    </div>
+  </section>
+
+  <!-- Paper abstract -->
+  <section class="section hero is-light">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Abstract</h2>
+          <div class="content has-text-justified">
+            <p>
+              The rising popularity of immersive visual experiences has
+              increased interest in stereoscopic 3D video generation. De-
+              spite significant advances in video synthesis, creating 3D
+              videos remains challenging due to the relative scarcity of
+              3D video data. We propose a simple approach for transforming a text-to-video generator into a video-to-stereo
+              generator. Given an input video, our framework automatically produces the video frames from a shifted viewpoint,
+              enabling a compelling 3D effect. Prior and concurrent approaches for this task typically operate in multiple phases,
+              first estimating video disparity or depth, then warping the
+              video accordingly to produce a second view, and finally inpainting the disoccluded regions. This approach inherently
+              fails when the scene involves specular surfaces or transpar-
+              ent objects. In such cases, single-layer disparity estimation is insufficient, resulting in artifacts and incorrect pixel
+              shifts during warping. Our work bypass these restriction by
+              <strong>directly</strong> synthesizing the new viewpoint, avoiding any intermediate steps. This is achived by leveraging a pre-trained
+              video model's priors on geometry, object materials, optics,
+              and semantics, without relying on external geometry models or manually disentangling geometry from the synthesis
+              process. We demonstrate the advantages of our approach
+              in complex, real-world scenarios featuring diverse object
+              materials and compositions.
+             </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Paper poster / pipeline -->
+  <section class="hero is-small">
+    <div class="hero-body">
+      <div class="container">
+        <h2 class="title is-3 has-text-centered">Pipeline</h2>
+        <img src="static/images/pipeline.png" width="100%" height="550" alt="Pipeline Diagram" style="margin-bottom: 2rem;">
+        <p class="has-text-justified">
+          Our mono-to-stereo pipeline. We leverage the pre-trained cascaded text to video model Lumiere, as well as a curated rectified stereo pairs dataset, to tackle mono-to-stereo synthesis. We fine tune base (low resolution) pre-traind model in two manners. First, we add additional input channels to condition the model on an input right eye, and train the base Eye2Eye generator on downsampled stereo pairs (top left). Second, we train a refiner model with the same conditioning mechanism, only on non-downsampled crops (bottom left). The base Eye2Eye model models the correct pixels disparity at a low resolution, and the Eye2Eye refiner yields higher quality for pixels with large disparities when sampling at a high resolution. 
+          Our sampling process (right) combines both models' strengths by first generating a low-resolution output from the base Eye2Eye model to establish appropriate stereo disparity for a compelling 3D effect, then noising and denoising it with the Eye2Eye refiner to achieve high visual quality.    
+        </p>
+      </div>
+    </div>
+  </section>
+<section class="section hero is-light">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Sample Results: Anaglyph / SBS</h2>
+    <p class="has-text-justified" style="margin-bottom: 2rem;">
+      Click on the buttons to toggle between anaglyph and side-by-side (SBS) views.  <br>
+      <strong>Note:</strong> Viewing anaglyph content on Safari/iOS devices may not provide the optimal experience due to browser limitations. For the best experience, we recommend using Chrome on desktop. <br>
+      For more videos, see <a href="results.html"> <strong><u>results page</u></strong></a>. <br>
+      To see the restuls in a VR headset, use the headset browser and press <a href="3D-viewer/results_viewers.html"><strong><u>here</u></strong></a>. 
+
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/A_couple_walks_their_dogs_through_a_rainy_urban_park/ours.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereo-videos/A_couple_walks_their_dogs_through_a_rainy_urban_park/ours.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+        </div>
+
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/Woman_sitting_in_a_cozy_café,_looking_contemplatively_out_of_the_window/ours.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereo-videos/Woman_sitting_in_a_cozy_café,_looking_contemplatively_out_of_the_window/ours.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+        </div>
+
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/A_stylishly_dressed_woman_reflected_in_a_shop_window_on_a_sunny_day/ours.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereo-videos/A_stylishly_dressed_woman_reflected_in_a_shop_window_on_a_sunny_day/ours.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+        </div>
+
+    </div>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/a_dog_in_the_snow/ours.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereo-videos/a_dog_in_the_snow/ours.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+        </div>
+
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/a_woman_sipping_wine/ours.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereo-videos/a_woman_sipping_wine/ours.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+        </div>
+
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/A_person_sits_at_a_desk/ours.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereo-videos/A_person_sits_at_a_desk/ours.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+        </div>
+
+    </div>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/Children_playing_on_a_colorful_merry-go-round_in_a_park,_surrounded_by_greenery_and_an_urban_backdrop/ours.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereo-videos/Children_playing_on_a_colorful_merry-go-round_in_a_park,_surrounded_by_greenery_and_an_urban_backdrop/ours.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+        </div>
+
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/a_dog_looking_around/ours.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereo-videos/a_dog_looking_around/ours.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+        </div>
+
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/Three_women_window-shopping,_their_images_mirrored_in_the_storefront/ours.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereo-videos/Three_women_window-shopping,_their_images_mirrored_in_the_storefront/ours.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+        </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- Ablation Study Section -->
+<section class="section hero">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Model Ablation</h2>
+    <p class="has-text-justified" style="margin-bottom: 2rem;"> 
+      <!-- <hr> -->
+      <ul>
+        Our method employs a two-stage pipeline:
+        <li>
+          <strong>(1) The base eye2eye model</strong>, which is trained on downsampled stereo pairs, yielding a compelling 3D effect at low resolution (top left), though its disparity does not scale when sampling at higher resolutions (top right).
+        </li>
+        <li>
+          <strong>(2) The eye2eye refiner model</strong>, which is trained on non-downsampled crops, capable of large pixel shifts yet tending to produce nonzero disparity for distant objects and reduced 3D effect (bottom left).
+        </li>
+      </ul>
+      <p style="margin-bottom: 2rem;"> 
+        We combine these stages by first generating a low-resolution output with the base model, then upsampling and noising it, then denoising it with the refiner. This results in a high-resolution video that maintains both a proper 3D effect and high visual quality (bottom right).
+        <strong>Note:</strong> Viewing anaglyph content on Safari/iOS devices may not provide the optimal experience due to browser limitations. For the best experience, we recommend using Chrome on desktop. <br>
+      </p>
+      <!-- <hr> -->
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/ablations_for_website/A_couple_walks_their_dogs_through_a_rainy_urban_park/256_left_right.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%" >
+                <source src="static/ablations_for_website/A_couple_walks_their_dogs_through_a_rainy_urban_park/256_left_right.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+          <p class="caption">Base Eye2Eye
+             <br> (low resolution, 
+             <br> correct parallax but low quality)
+            </p>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/ablations_for_website/A_couple_walks_their_dogs_through_a_rainy_urban_park/base_left_right.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/ablations_for_website/A_couple_walks_their_dogs_through_a_rainy_urban_park/base_left_right.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+          <p class="caption">Base Eye2Eye 
+            <br> (high resolution sampling 
+            <br>reduces 3D effect)
+          </p>
+        </div>
+
+    </div>
+    <div class="row">
+
+      <div class="unit">
+        <button class="toggleButton">Click to view SBS</button>
+        <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/ablations_for_website/A_couple_walks_their_dogs_through_a_rainy_urban_park/refiner_left_right.mp4')">
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/ablations_for_website/A_couple_walks_their_dogs_through_a_rainy_urban_park/refiner_left_right.mp4" type="video/mp4">
+            </video>
+          </div>
+        </a>
+        <p class="caption">Eye2Eye Refiner
+           <br> (good quality, 
+           <br> but uniformly shifts the right eye)
+          </p>
+      </div>
+      <div class="unit">
+        <button class="toggleButton">Click to view SBS</button>
+        <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/A_couple_walks_their_dogs_through_a_rainy_urban_park/ours.mp4')">
+          <div class="makeanaglyph videoContainer">
+            <video poster="" autoplay muted loop height="100%">
+              <source src="static/stereo-videos/A_couple_walks_their_dogs_through_a_rainy_urban_park/ours.mp4" type="video/mp4">
+            </video>
+          </div>
+        </a>
+        <p class="caption">Full Eye2Eye 
+          <br> (correct parallax and
+          <br> good quality)
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section hero is-light">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Comparison to baselines</h2>
+      <p class="has-text-justified" style="margin-bottom: 2rem;">
+        <!-- We compare our method against the common "Warp and Inpaint" approach, which uses monocular depth estimation to warp the right eye video into the left eye, and an inpainting model to fill in the missing content.<br>
+        We compare it against out implementation and StereoCrafters [3] implementation.
+        Such approach fails in videos where specular reflections or transperent objects are present, as it is often impossible to charecterize each pixel with a single depth value. <br>
+        In such cases, the incorrect depth estimation leads to incorrect 3D effect and distortions in the output frames. <br>
+        Additionally, Stereo-Crafter often exhibits warping artefacts, like smooth edges, and temporal inconsitencies. 
+        Our method directly produces the RGB stereo views, without the need to first estimate a depth map. Thus, it can levarge the generative model's prior on object materials and optics, and handle such challenging videos. <br> -->
+        
+        We compare our method with the standard "Warp and Inpaint" approach, which relies on monocular depth estimation to warp the right-eye view to the left eye and uses and inpainting model to fill missing areas.
+        We consider both our implementation and the StereoCrafter [3] method. 
+        <br>This baseline struggles with videos containing specular reflections or transparent objects, as a single depth cannot be assigned to each pixel (e.g., when the depth of the reflection and that of the surface differ). 
+        <br>Consequently, reflections and transparent surfaces are incorrectly warped, resulting in distorted or incorrect 3D effects. StereoCrafter additionally tends to produce warping artifacts, such as blurred edges and temporal inconsistencies. 
+        <br>In contrast, our method generates stereo RGB views directly, bypassing explicit depth estimation and leveraging the generative model's implicit knowledge about materials and optics to handle challenging scenarios effectively.
+        <strong>Note:</strong> Viewing anaglyph content on Safari/iOS devices may not provide the optimal experience due to browser limitations. For the best experience, we recommend using Chrome on desktop. <br>
+        <br>For more videos, please see the <a href="warp_inp_comparison.html"><strong><u>comparisons page</u></strong></a>. 
+        <br>Our VR user study of our results vs. warp and inpaint can be found <a href="vr-viewer-userstudy/index.html"><strong><u>here</u></strong></a>. 
+        </p>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/A_reflection_of_a_woman_on_a_building\'s_glass_window_with_a_car_parked_nearby/ours.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereo-videos/A_reflection_of_a_woman_on_a_building's_glass_window_with_a_car_parked_nearby/ours.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+          <p class="caption">Ours</p>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/A_reflection_of_a_woman_on_a_building\'s_glass_window_with_a_car_parked_nearby/warp_inpaint.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereo-videos/A_reflection_of_a_woman_on_a_building's_glass_window_with_a_car_parked_nearby/warp_inpaint.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+          <p class="caption">Warp & Inpaint</p>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereocrafter_public/A_reflection_of_a_woman_on_a_building\'s_glass_window_with_a_car_parked_nearby/splatting_output_inpainting_results_sbs.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereocrafter_public/A_reflection_of_a_woman_on_a_building's_glass_window_with_a_car_parked_nearby/splatting_output_inpainting_results_sbs.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+          <p class="caption">Stereo-Crafter</p>
+        </div>
+    </div>
+    <p class="has-text-justified">Note the 3D effect of the reflection of the woman's face; in our output it appears near, while it has no 3D in the Warp & Inpaint and Stereo-Crafter baselines, since the depth estimation doesn't account for the reflection.</p>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/A_couple_walks_their_dogs_through_a_rainy_urban_park/ours.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereo-videos/A_couple_walks_their_dogs_through_a_rainy_urban_park/ours.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+          <p class="caption">Ours</p>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/A_couple_walks_their_dogs_through_a_rainy_urban_park/warp_inpaint.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereo-videos/A_couple_walks_their_dogs_through_a_rainy_urban_park/warp_inpaint.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+          <p class="caption">Warp & Inpaint</p>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereocrafter_public/A_couple_walks_their_dogs_through_a_rainy_urban_park/splatting_output_inpainting_results_sbs.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereocrafter_public/A_couple_walks_their_dogs_through_a_rainy_urban_park/splatting_output_inpainting_results_sbs.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+          <p class="caption">Stereo-Crafter</p>
+        </div>
+    </div>
+    <p class="has-text-justified">Note the buildings behind the umbrella; in the Warp & Inpaint and Stereo-Crafter baselines, they appear to be as near as the umbrella, while in our result they are correctly distant.</p>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/a_person_looking_out_the_window_at_a_forest,_reflected_on_the_glass/ours.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereo-videos/a_person_looking_out_the_window_at_a_forest,_reflected_on_the_glass/ours.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+          <p class="caption">Ours</p>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/a_person_looking_out_the_window_at_a_forest,_reflected_on_the_glass/warp_inpaint.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereo-videos/a_person_looking_out_the_window_at_a_forest,_reflected_on_the_glass/warp_inpaint.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+          <p class="caption">Warp & Inpaint</p>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereocrafter_public/a_person_looking_out_the_window_at_a_forest,_reflected_on_the_glass/splatting_output_inpainting_results_sbs.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereocrafter_public/a_person_looking_out_the_window_at_a_forest,_reflected_on_the_glass/splatting_output_inpainting_results_sbs.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+          <p class="caption">Stereo-Crafter</p>
+        </div>
+    </div>
+    <p class="has-text-justified">Note the depth of the reflection: it should appear near, as in our result. The warp & inpaint baseline fails to create a 3D effect of this reflection. While the Stereo-Crafter result has some 3D in the reflection area, it is full of artefacts.</p>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/A_woman_wearing_a_red_beanie_looking_out_through_a_round_window/ours.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereo-videos/A_woman_wearing_a_red_beanie_looking_out_through_a_round_window/ours.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+          <p class="caption">Ours</p>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/A_woman_wearing_a_red_beanie_looking_out_through_a_round_window/warp_inpaint.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereo-videos/A_woman_wearing_a_red_beanie_looking_out_through_a_round_window/warp_inpaint.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+          <p class="caption">Warp & Inpaint</p>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereocrafter_public/A_woman_wearing_a_red_beanie_looking_out_through_a_round_window/splatting_output_inpainting_results_sbs.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereocrafter_public/A_woman_wearing_a_red_beanie_looking_out_through_a_round_window/splatting_output_inpainting_results_sbs.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+          <p class="caption">Stereo-Crafter</p>
+        </div>
+    </div>
+    <p class="has-text-justified">Note the depth difference between the far away content reflected on the window, and the woman's face: In in the Warp & Inpaint and Stereo-Crafter baselines, they both have the same depth. In our results, the woman's face is indeed closer than the reflected content.</p>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/A_reflective_moment_as_a_woman_sits_by_the_window,_listening_to_music_while_gazing_at_the_cityscape_at_dusk/ours.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereo-videos/A_reflective_moment_as_a_woman_sits_by_the_window,_listening_to_music_while_gazing_at_the_cityscape_at_dusk/ours.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+          <p class="caption">Ours</p>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/A_reflective_moment_as_a_woman_sits_by_the_window,_listening_to_music_while_gazing_at_the_cityscape_at_dusk/warp_inpaint.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereo-videos/A_reflective_moment_as_a_woman_sits_by_the_window,_listening_to_music_while_gazing_at_the_cityscape_at_dusk/warp_inpaint.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+          <p class="caption">Warp & Inpaint</p>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereocrafter_public/A_reflective_moment_as_a_woman_sits_by_the_window,_listening_to_music_while_gazing_at_the_cityscape_at_dusk/splatting_output_inpainting_results_sbs.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereocrafter_public/A_reflective_moment_as_a_woman_sits_by_the_window,_listening_to_music_while_gazing_at_the_cityscape_at_dusk/splatting_output_inpainting_results_sbs.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+          <p class="caption">Stereo-Crafter</p>
+        </div>
+    </div>
+    <p class="has-text-justified">Note the building behind reflection on the window: in in the Warp & Inpaint and Stereo-Crafter baselines, the building is as near as the reflection; in our result the reflection is in front of it.</p>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/A_smiling_woman_stands_behind_a_window,_reflecting_the_outdoors/ours.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereo-videos/A_smiling_woman_stands_behind_a_window,_reflecting_the_outdoors/ours.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+          <p class="caption">Ours</p>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/A_smiling_woman_stands_behind_a_window,_reflecting_the_outdoors/warp_inpaint.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereo-videos/A_smiling_woman_stands_behind_a_window,_reflecting_the_outdoors/warp_inpaint.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+          <p class="caption">Warp & Inpaint</p>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereocrafter_public/A_smiling_woman_stands_behind_a_window,_reflecting_the_outdoors/splatting_output_inpainting_results_sbs.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereocrafter_public/A_smiling_woman_stands_behind_a_window,_reflecting_the_outdoors/splatting_output_inpainting_results_sbs.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+          <p class="caption">Stereo-Crafter</p>
+        </div>
+    </div>
+    <p class="has-text-justified">Note that the reflection of the distant trees on the window in in the Warp & Inpaint and Stereo-Crafter baselines appears close, while it should appear far, as in our result.</p>
+    <div class="row">
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/A_man_sips_coffee_while_gazing_through_a_reflective_window/ours.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereo-videos/A_man_sips_coffee_while_gazing_through_a_reflective_window/ours.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+          <p class="caption">Ours</p>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereo-videos/A_man_sips_coffee_while_gazing_through_a_reflective_window/warp_inpaint.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereo-videos/A_man_sips_coffee_while_gazing_through_a_reflective_window/warp_inpaint.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+          <p class="caption">Warp & Inpaint</p>
+        </div>
+        <div class="unit">
+          <button class="toggleButton">Click to view SBS</button>
+          <a href="#" class="video-link" onclick="handleVideoClick(event, 'static/stereocrafter_public/A_man_sips_coffee_while_gazing_through_a_reflective_window/splatting_output_inpainting_results_sbs.mp4')">
+            <div class="makeanaglyph videoContainer">
+              <video poster="" autoplay muted loop height="100%">
+                <source src="static/stereocrafter_public/A_man_sips_coffee_while_gazing_through_a_reflective_window/splatting_output_inpainting_results_sbs.mp4" type="video/mp4">
+              </video>
+            </div>
+          </a>
+          <p class="caption">Stereo-Crafter</p>
+        </div>
+    </div>
+    <p class="has-text-justified">Note the reflection on the mug; in the warp and inpaint output it is as near as the mug, while in our output it is correctly distant.</p>
+  </div>
+</section>
+
+  <!-- Video carousel -->
+<section class="hero">
+    <div class="hero-body">
+      <div class="container">
+        <h2 class="title is-3 has-text-centered">Additional Qualitative comparison to baselines</h2>
+        <p class="has-text-justified">
+          We show additional qualitative comparison to:
+          <li>
+          Deep3D [1] , which traines a deep CNN to predict stereo from monocular videos. This early work often does not produce a compelling 3D effect.<br>
+        </li>
+        <li>
+          Dynamic Gaussian Marbles (DGM) [2], a 4D reconstruction method from monocular videos, from which we synthesis stereo views. This method does not leverage a generative prior, and only relays on infromation appearing in the video. Thus it can not inpaint missing content, leading to holes in the synthesized views. Additionally, as it uses on monocular depth estimation as a regularization, it often fails to correctly model the geometry under challanging settings that include specular reflections, refractions, etc.
+        </li>
+        </p>
+        <div id="results-carousel" class="carousel results-carousel">
+          <div class="item item-video1">
+            <div class="video-wrapper centered">
+              <video poster="" autoplay controls muted loop height="100%">
+                <source src="static/videos/comp_0.mp4" type="video/mp4">
+              </video>
+            </div>
+            <video poster="" autoplay controls muted loop height="100%">
+              <source src="static/videos/comp_0_a.mp4" type="video/mp4">
+            </video>
+          </div>
+          <div class="item item-video1">
+            <div class="video-wrapper centered">
+              <video poster="" autoplay controls muted loop height="100%">
+                <source src="static/videos/comp_4.mp4" type="video/mp4">
+              </video>
+            </div>
+            <video poster="" autoplay controls muted loop height="100%">
+              <source src="static/videos/comp_4_a.mp4" type="video/mp4">
+            </video>
+          </div>
+          <div class="item item-video2">
+            <div class="video-wrapper centered">
+              <video poster="" autoplay controls muted loop height="100%">
+                <source src="static/videos/comp_2.mp4" type="video/mp4">
+              </video>
+            </div>
+            <video poster="" autoplay controls muted loop height="100%">
+              <source src="static/videos/comp_2_a.mp4" type="video/mp4">
+            </video>
+          </div>
+          <div class="item item-video2">
+            <div class="video-wrapper centered">
+              <video poster="" autoplay controls muted loop height="100%">
+                <source src="static/videos/comp_3.mp4" type="video/mp4">
+              </video>
+            </div>
+            <video poster="" autoplay controls muted loop height="100%">
+              <source src="static/videos/comp_3_a.mp4" type="video/mp4">
+            </video>
+          </div>
+          <div class="item item-video2">
+            <div class="video-wrapper centered">
+              <video poster="" autoplay controls muted loop height="100%">
+                <source src="static/videos/comp_1.mp4" type="video/mp4">
+              </video>
+            </div>
+            <video poster="" autoplay controls muted loop height="100%">
+              <source src="static/videos/comp_1_a.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <p class="has-text-justified"> [1] Deep3D: Fully Automatic 2D-to-3D Video Conversion with Deep Convolutional Neural Networks.
+          Junyuan Xie, Ross Girshick, Ali Farhadi
+          </p>
+        <p class="has-text-justified"> [2] Dynamic Gaussian Marbles for Novel View Synthesis of Casual Monocular Videos.
+          Colton Stearns, Adam Harley, Mikaela Uy, Florian Dubost, Federico Tombari, Gordon Wetzstein, Leonidas Guibas
+          </p>
+        <p class="has-text-justified"> [3] StereoCrafter: Diffusion-based Generation of Long and High-fidelity Stereoscopic 3D from Monocular Videos.
+        Sijie Zhao, Wenbo Hu, Xiaodong Cun, Yong Zhang, Xiaoyu Li, Zhe Kong, Xiangjun Gao, Muyao Niu, Ying Shan
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- <h2 class="title is-3 has-text-centered">References</h2> -->
+
+  </section>
+
+  <!-- End video carousel -->
+
+  <!-- The snippet's toggle script -->
+  <script>
+    document.addEventListener('click', (event) => {
+      if (event.target.classList.contains('toggleButton')) {
+        const unit = event.target.closest('.unit');
+        const videoContainer = unit.querySelector('.videoContainer');
+        const video = videoContainer.querySelector('video');
+        const source = video.querySelector('source');
+        
+        // Toggle video container class
+        if (videoContainer.classList.contains('makeanaglyph')) {
+          videoContainer.classList.remove('makeanaglyph');
+          videoContainer.classList.add('sbs');
+          
+          // For iOS/Safari: switch back to original video when toggling to SBS
+          if (isIOSorSafari() && source.dataset.originalSrc) {
+            source.src = source.dataset.originalSrc;
+            video.load();
+          }
+        } else {
+          videoContainer.classList.remove('sbs');
+          videoContainer.classList.add('makeanaglyph');
+          
+          // For iOS/Safari: switch to anaglyph version when toggling to anaglyph
+          if (isIOSorSafari() && source.dataset.originalSrc) {
+            source.src = getAnaglyphSrc(source.dataset.originalSrc);
+            video.load();
+          }
+        }
+
+        // Toggle button text
+        if (event.target.textContent === 'Click to view Anaglyph') {
+          event.target.textContent = 'Click to view SBS';
+        } else {
+          event.target.textContent = 'Click to view Anaglyph';
+        }
+      }
+    });
+  </script>
+  <!-- End results section -->
+
+
+</body>
+</html>
