@@ -2,7 +2,7 @@ import os
 
 RELATIVE_VIEWERS_DIR = "viewers"
 RELATIVE_VIEWERS_DIR_COMPARE = "viewers_compare"
-RELATIVE_IMAGES_DIR = "../static/stereo-videos/images"
+RELATIVE_IMAGES_DIR = "../../../static/stereo-videos/images"
 
 VIEWERS_DIR = "3D-viewer/viewers"
 VIEWERS_DIR_COMPARE = "3D-viewer/viewers_compare"

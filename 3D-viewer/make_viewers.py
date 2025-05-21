@@ -4,7 +4,7 @@ import shutil
 STEREO_JS_SOURCE='3D-viewer/example/stereo.js'
 STEREO_JS_SOURCE_AR2 = '3D-viewer/example_ar_2_195/stereo.js'
 SAVE_PATH = 'viewers'
-PAIRS_USER_STUDY_PATH = "../static/stereo-videos"  # https path used inside <source>
+PAIRS_USER_STUDY_PATH = "../../../static/stereo-videos"  # https path used inside <source>
 VIDEOS_LOCAL_PATH = "static/stereo-videos"
 
 
